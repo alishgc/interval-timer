@@ -132,7 +132,7 @@ function render() {
         roundEl.textContent = `${config.rounds} ROUNDS FINISHED`;
         document.getElementById('pauseBtn').style.display = 'none';
     } else {
-        phaseEl.textContent = state.phase === 'work' ? '💪 WORK' : '☕ REST';
+        phaseEl.textContent = state.phase === 'work' ? 'WORK' : 'REST';
         timeEl.textContent = state.secondsLeft;
         if (state.secondsLeft <= 5) {
             timeEl.classList.add('pulse');
@@ -144,7 +144,7 @@ function render() {
     }
     setPhaseVisual(state.phase);
 }
-
+//💪☕
 // ---------- Timer Control ----------
 function startSession() {
     ensureAudio();
