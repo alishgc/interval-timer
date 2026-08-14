@@ -1,0 +1,9 @@
+{
+  "appId": "com.alishgc.intervaltimer",
+  "appName": "Interval Timer",
+  "webDir": "src",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

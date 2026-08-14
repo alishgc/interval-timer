@@ -1,0 +1,16 @@
+{
+  "name": "interval-timer",
+  "version": "1.0.0",
+  "description": "Interval Timer App",
+  "scripts": {
+    "build": "npx cap sync",
+    "open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.0",
+    "@capacitor/core": "^5.7.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.7.0"
+  }
+}

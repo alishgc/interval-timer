@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#14181c">
+    <title>Interval Timer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Setup Screen -->
+    <div id="setup">
+        <h1><!--⚡ --> Interval Timer</h1>
+        
+        <div class="field">
+            <label>Work</label>
+            <div class="stepper">
+                <button onclick="adjust('work', -5)">−</button>
+                <div class="val">
+                    <input id="workVal" type="number" inputmode="numeric" value="40" min="1" onchange="commit('work', this)" onclick="this.select()">
+                    <span class="unit">sec</span>
+                </div>
+                <button onclick="adjust('work', 5)">+</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Rest</label>
+            <div class="stepper">
+                <button onclick="adjust('rest', -5)">−</button>
+                <div class="val">
+                    <input id="restVal" type="number" inputmode="numeric" value="20" min="1" onchange="commit('rest', this)" onclick="this.select()">
+                    <span class="unit">sec</span>
+                </div>
+                <button onclick="adjust('rest', 5)">+</button>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Rounds</label>
+            <div class="stepper">
+                <button onclick="adjust('rounds', -1)">−</button>
+                <div class="val">
+                    <input id="roundsVal" type="number" inputmode="numeric" value="10" min="1" onchange="commit('rounds', this)" onclick="this.select()">
+                </div>
+                <button onclick="adjust('rounds', 1)">+</button>
+            </div>
+        </div>
+
+        <button id="startBtn" onclick="startSession()">▶ Start</button>
+        
+        <div id="version">v1.0.0</div>
+    </div>
+
+    <!-- Run Screen -->
+    <div id="run">
+        <div id="phaseLabel">WORK</div>
+        <div id="timeDisplay">40</div>
+        <div id="roundLabel">ROUND 1 / 10</div>
+        <div id="controls">
+            <button id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+            <button onclick="resetSession()">⟳ Reset</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
