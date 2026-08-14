@@ -1,290 +1,699 @@
-/* styles.css */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
+/* =========================
+   RESET
+========================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
 }
 
 html,
-body {
-    height: 100%;
-    overflow: hidden;
-    background: #14181c;
+body{
+    width:100%;
+    height:100%;
 }
 
-body {
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: #f2f2f2;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    transition: background-color 0.25s ease;
+body{
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:#14181c;
+    color:#f3f4f6;
+    overflow:hidden;
 }
 
-/* ---------- Setup screen ---------- */
-#setup {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 24px;
-    gap: 22px;
-    max-width: 420px;
-    margin: 0 auto;
-    width: 100%;
-    animation: fadeIn 0.3s ease;
+/* =========================
+   COMMON
+========================= */
+
+button{
+    border:none;
+    outline:none;
+    cursor:pointer;
+    transition:0.15s ease;
 }
 
-h1 {
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 6px;
-    letter-spacing: 0.02em;
-    color: #e8e8e8;
+button:active{
+    transform:scale(.97);
 }
 
-#version {
-    text-align: center;
-    font-size: 12px;
-    color: #4a5058;
-    margin-top: 4px;
+input{
+    outline:none;
 }
 
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+/* =========================
+   SETUP SCREEN
+========================= */
+
+#setupScreen{
+    width:100%;
+    height:100%;
+    max-width:460px;
+
+    margin:0 auto;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:24px;
+
+    overflow-y:auto;
 }
 
-.field label {
-    font-size: 13px;
-    color: #8a8f96;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:28px;
 }
 
-.stepper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #1e2328;
-    border-radius: 14px;
-    padding: 6px;
-    border: 1px solid #2a3138;
+.header h1{
+    font-size:28px;
+    font-weight:700;
 }
 
-.stepper button {
-    width: 52px;
-    height: 52px;
-    border-radius: 10px;
-    border: none;
-    background: #2a3138;
-    color: #f2f2f2;
-    font-size: 22px;
-    font-weight: 300;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s ease;
+.icon-btn{
+    width:48px;
+    height:48px;
+
+    border-radius:14px;
+
+    background:#1f252b;
+    color:white;
+
+    font-size:20px;
 }
 
-.stepper button:active {
-    background: #3a434c;
-    transform: scale(0.95);
+.icon-btn:hover{
+    background:#2a323a;
 }
 
-.stepper .val {
-    font-size: 28px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    min-width: 90px;
-    text-align: center;
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 4px;
+/* =========================
+   FIELD
+========================= */
+
+.field{
+    margin-bottom:18px;
 }
 
-.stepper .val input {
-    width: 64px;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #f2f2f2;
-    font: inherit;
-    text-align: right;
-    -moz-appearance: textfield;
+.field label{
+    display:block;
+
+    margin-bottom:8px;
+
+    color:#8f97a0;
+
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:.08em;
+
+    text-transform:uppercase;
 }
 
-.stepper .val input::-webkit-outer-spin-button,
-.stepper .val input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.stepper{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    background:#1d2328;
+
+    border:1px solid #2b333b;
+
+    border-radius:18px;
+
+    padding:6px;
 }
 
-.stepper .val input:focus {
-    color: #6fd39a;
+.stepper button{
+    width:54px;
+    height:54px;
+
+    border-radius:12px;
+
+    background:#2c353d;
+    color:white;
+
+    font-size:24px;
 }
 
-.stepper .unit {
-    font-size: 13px;
-    color: #8a8f96;
-    font-weight: 400;
+.value-wrap{
+    display:flex;
+    align-items:baseline;
+    gap:5px;
 }
 
-#startBtn {
-    margin-top: 8px;
-    height: 58px;
-    border: none;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #3a9d5d, #2d8a4e);
-    color: #fff;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 15px rgba(58, 157, 93, 0.3);
+.value-wrap input{
+    width:80px;
+
+    background:transparent;
+    border:none;
+
+    text-align:right;
+
+    color:white;
+
+    font-size:30px;
+    font-weight:700;
 }
 
-#startBtn:active {
-    background: #2f8049;
-    transform: scale(0.97);
+.value-wrap span{
+    color:#9aa1a8;
+    font-size:13px;
 }
 
-/* ---------- Run screen ---------- */
-#run {
-    display: none;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    animation: fadeIn 0.3s ease;
+/* =========================
+   TOTAL TIME
+========================= */
+
+#totalTimeCard{
+    margin-top:8px;
+
+    background:#1d2328;
+
+    border-radius:16px;
+
+    padding:16px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    border:1px solid #2a323a;
 }
 
-#phaseLabel {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    margin-bottom: 4px;
-    opacity: 0.92;
-    text-transform: uppercase;
+#totalTimeCard span{
+    color:#98a0a8;
 }
 
-#timeDisplay {
-    font-size: 26vh;
-    font-weight: 800;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+#totalTimeCard strong{
+    font-size:18px;
 }
 
-#roundLabel {
-    font-size: 20px;
-    font-weight: 500;
-    opacity: 0.85;
-    margin-top: 10px;
-    letter-spacing: 0.04em;
+/* =========================
+   START BUTTON
+========================= */
+
+#startBtn{
+    margin-top:20px;
+
+    height:60px;
+
+    border-radius:18px;
+
+    background:linear-gradient(
+        135deg,
+        #3a9d5d,
+        #2d8a4e
+    );
+
+    color:white;
+
+    font-size:18px;
+    font-weight:700;
 }
 
-#controls {
-    position: absolute;
-    bottom: 36px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    gap: 18px;
-    padding: 0 24px;
+/* =========================
+   PRESETS
+========================= */
+
+#presetsSection{
+    margin-top:26px;
 }
 
-#controls button {
-    flex: 1;
-    max-width: 160px;
-    height: 56px;
-    border-radius: 14px;
-    border: none;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+.section-title{
+    margin-bottom:14px;
+
+    color:#9098a0;
+
+    font-size:12px;
+    font-weight:700;
+
+    letter-spacing:.08em;
+    text-transform:uppercase;
 }
 
-#controls button:active {
-    background: rgba(255, 255, 255, 0.18);
-    transform: scale(0.96);
+#presetList{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+
+    margin-bottom:12px;
 }
 
-#pauseBtn.active {
-    background: rgba(255, 200, 0, 0.2);
+.preset-chip{
+    display:flex;
+    align-items:center;
+
+    background:#1f252b;
+
+    border:1px solid #2c343c;
+
+    border-radius:14px;
+
+    overflow:hidden;
 }
 
-/* Phase backgrounds */
-.phase-work {
-    background: linear-gradient(135deg, #1b5e3a, #0d3d24);
+.preset-load{
+    padding:10px 14px;
+
+    background:transparent;
+    color:white;
+
+    font-size:14px;
 }
 
-.phase-rest {
-    background: linear-gradient(135deg, #c96a1a, #a05512);
+.preset-delete{
+    width:38px;
+
+    background:#312026;
+    color:#ff8b8b;
 }
 
-.phase-done {
-    background: linear-gradient(135deg, #14181c, #1a2026);
+#addPresetBtn{
+    width:100%;
+    height:52px;
+
+    border-radius:16px;
+
+    background:#232b32;
+    color:white;
+
+    font-size:15px;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
+/* =========================
+   VERSION
+========================= */
+
+#version{
+    text-align:center;
+
+    margin-top:auto;
+    padding-top:24px;
+
+    color:#5d6770;
+
+    font-size:12px;
+}
+
+/* =========================
+   TIMER SCREEN
+========================= */
+
+#timerScreen{
+    display:none;
+
+    width:100%;
+    height:100%;
+
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    padding:24px;
+
+    text-align:center;
+}
+
+#phaseLabel{
+    font-size:28px;
+    font-weight:700;
+
+    letter-spacing:.18em;
+
+    text-transform:uppercase;
+
+    margin-bottom:8px;
+}
+
+#timeDisplay{
+    font-size:min(34vw,180px);
+    font-weight:800;
+
+    line-height:1;
+}
+
+#roundLabel{
+    margin-top:12px;
+
+    font-size:18px;
+    color:rgba(255,255,255,.85);
+}
+
+/* =========================
+   PROGRESS BAR
+========================= */
+
+#progressContainer{
+    width:100%;
+    max-width:340px;
+
+    height:10px;
+
+    margin-top:20px;
+
+    background:rgba(255,255,255,.12);
+
+    border-radius:999px;
+
+    overflow:hidden;
+}
+
+#progressBar{
+    width:0%;
+
+    height:100%;
+
+    background:white;
+
+    border-radius:999px;
+
+    transition:.25s ease;
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+#timerControls{
+    position:absolute;
+
+    bottom:30px;
+
+    display:flex;
+    gap:14px;
+}
+
+#timerControls button{
+    min-width:140px;
+
+    height:56px;
+
+    border-radius:16px;
+
+    background:rgba(255,255,255,.12);
+    color:white;
+
+    backdrop-filter:blur(10px);
+}
+
+/* =========================
+   SETTINGS PAGE
+========================= */
+
+#settingsScreen{
+    display:none;
+
+    width:100%;
+    height:100%;
+
+    max-width:460px;
+
+    margin:0 auto;
+
+    padding:24px;
+
+    overflow-y:auto;
+}
+
+.settings-header{
+    display:flex;
+    align-items:center;
+
+    gap:14px;
+
+    margin-bottom:24px;
+}
+
+.back-btn{
+    width:42px;
+    height:42px;
+
+    border-radius:12px;
+
+    background:#232b32;
+    color:white;
+}
+
+.settings-header h2{
+    font-size:24px;
+}
+
+.settings-group{
+    margin-bottom:28px;
+}
+
+.group-title{
+    margin-bottom:14px;
+
+    color:#8f97a0;
+
+    font-size:12px;
+    font-weight:700;
+
+    letter-spacing:.08em;
+}
+
+.setting-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    background:#1d2328;
+
+    border-radius:16px;
+
+    padding:16px;
+}
+
+.small-stepper{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.small-stepper button{
+    width:34px;
+    height:34px;
+
+    border-radius:10px;
+
+    background:#2c353d;
+    color:white;
+}
+
+.toggle-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    background:#1d2328;
+
+    border-radius:16px;
+
+    padding:16px;
+
+    margin-bottom:10px;
+}
+
+.toggle-row input{
+    width:20px;
+    height:20px;
+}
+
+.about-text{
+    background:#1d2328;
+
+    padding:16px;
+
+    border-radius:16px;
+
+    color:#9aa1a8;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+#presetModal{
+    display:none;
+
+    position:fixed;
+    inset:0;
+
+    background:rgba(0,0,0,.6);
+
+    justify-content:center;
+    align-items:center;
+
+    padding:20px;
+
+    z-index:50;
+}
+
+.modal-card{
+    width:100%;
+    max-width:380px;
+
+    background:#1d2328;
+
+    border-radius:22px;
+
+    padding:20px;
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    margin-bottom:18px;
+}
+
+.close-btn{
+    background:transparent;
+    color:white;
+
+    font-size:20px;
+}
+
+.modal-field{
+    margin-bottom:14px;
+}
+
+.modal-field label{
+    display:block;
+
+    margin-bottom:6px;
+
+    color:#98a0a8;
+
+    font-size:13px;
+}
+
+.modal-field input{
+    width:100%;
+
+    height:46px;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:0 12px;
+
+    background:#2a323a;
+    color:white;
+}
+
+.modal-actions{
+    display:flex;
+    gap:10px;
+
+    margin-top:18px;
+}
+
+.modal-actions button{
+    flex:1;
+
+    height:50px;
+
+    border-radius:14px;
+
+    background:#2c353d;
+    color:white;
+}
+
+/* =========================
+   COMPLETE SCREEN
+========================= */
+
+#completeScreen{
+    display:none;
+
+    width:100%;
+    height:100%;
+
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+
+    padding:24px;
+}
+
+.complete-icon{
+    font-size:72px;
+    margin-bottom:12px;
+}
+
+#completeSummary{
+    margin-top:16px;
+    color:#b5bcc4;
+}
+
+.complete-actions{
+    display:flex;
+    gap:12px;
+
+    margin-top:24px;
+}
+
+.complete-actions button{
+    min-width:130px;
+
+    height:52px;
+
+    border-radius:16px;
+
+    background:#2c353d;
+    color:white;
+}
+
+/* =========================
+   PHASE COLORS
+========================= */
+
+.phase-prep{
+    background:#2a4a7a;
+}
+
+.phase-work{
+    background:#1b5e3a;
+}
+
+.phase-rest{
+    background:#c96a1a;
+}
+
+.phase-complete{
+    background:#14181c;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width:420px){
+
+    #timeDisplay{
+        font-size:120px;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-@keyframes pulse {
-    0%,
-    100% {
-        transform: scale(1);
+    .value-wrap input{
+        width:65px;
+        font-size:26px;
     }
-    50% {
-        transform: scale(1.02);
-    }
-}
 
-#timeDisplay.pulse {
-    animation: pulse 1s ease infinite;
-}
-
-/* Responsive adjustments */
-@media (max-width: 380px) {
-    #timeDisplay {
-        font-size: 20vh;
-    }
-    .stepper button {
-        width: 44px;
-        height: 44px;
-        font-size: 18px;
-    }
-    .stepper .val {
-        font-size: 24px;
-        min-width: 70px;
-    }
-    .stepper .val input {
-        width: 50px;
+    #timerControls button{
+        min-width:120px;
     }
 }

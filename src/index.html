@@ -2,67 +2,397 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#14181c">
-    <title>Interval Timer</title>
+    <title>Workout Timer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Setup Screen -->
-    <div id="setup">
-        <h1><!--⚡ --> Interval Timer</h1>
-        
+
+    <!-- =========================
+         SETUP SCREEN
+    ========================== -->
+    <div id="setupScreen">
+
+        <div class="header">
+            <h1>Workout Timer</h1>
+
+            <button id="settingsBtn" class="icon-btn" aria-label="Settings">
+                ⚙
+            </button>
+        </div>
+
+        <!-- WORK -->
         <div class="field">
             <label>Work</label>
+
             <div class="stepper">
-                <button onclick="adjust('work', -5)">−</button>
-                <div class="val">
-                    <input id="workVal" type="number" inputmode="numeric" value="40" min="1" onchange="commit('work', this)" onclick="this.select()">
-                    <span class="unit">sec</span>
+                <button onclick="adjustValue('work', -5)">−</button>
+
+                <div class="value-wrap">
+                    <input
+                        id="workInput"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        value="40"
+                    >
+                    <span>sec</span>
                 </div>
-                <button onclick="adjust('work', 5)">+</button>
+
+                <button onclick="adjustValue('work', 5)">+</button>
             </div>
         </div>
 
+        <!-- REST -->
         <div class="field">
             <label>Rest</label>
+
             <div class="stepper">
-                <button onclick="adjust('rest', -5)">−</button>
-                <div class="val">
-                    <input id="restVal" type="number" inputmode="numeric" value="20" min="1" onchange="commit('rest', this)" onclick="this.select()">
-                    <span class="unit">sec</span>
+                <button onclick="adjustValue('rest', -5)">−</button>
+
+                <div class="value-wrap">
+                    <input
+                        id="restInput"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        value="20"
+                    >
+                    <span>sec</span>
                 </div>
-                <button onclick="adjust('rest', 5)">+</button>
+
+                <button onclick="adjustValue('rest', 5)">+</button>
             </div>
         </div>
 
+        <!-- ROUNDS -->
         <div class="field">
             <label>Rounds</label>
+
             <div class="stepper">
-                <button onclick="adjust('rounds', -1)">−</button>
-                <div class="val">
-                    <input id="roundsVal" type="number" inputmode="numeric" value="10" min="1" onchange="commit('rounds', this)" onclick="this.select()">
+                <button onclick="adjustValue('rounds', -1)">−</button>
+
+                <div class="value-wrap">
+                    <input
+                        id="roundsInput"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        value="10"
+                    >
                 </div>
-                <button onclick="adjust('rounds', 1)">+</button>
+
+                <button onclick="adjustValue('rounds', 1)">+</button>
             </div>
         </div>
 
-        <button id="startBtn" onclick="startSession()">▶ Start</button>
-        
-        <div id="version">v1.0.0</div>
+        <!-- TOTAL TIME -->
+        <div id="totalTimeCard">
+            <span>Total Workout Time</span>
+            <strong id="totalTimeText">0m 0s</strong>
+        </div>
+
+        <!-- START -->
+        <button id="startBtn" onclick="startSession()">
+            ▶ Start
+        </button>
+
+        <!-- =========================
+             PRESETS (BOTTOM)
+        ========================== -->
+        <div id="presetsSection">
+
+            <div class="section-title">
+                <span>Presets</span>
+            </div>
+
+            <div id="presetList"></div>
+
+            <button id="addPresetBtn" onclick="openPresetModal()">
+                + Add Preset
+            </button>
+
+        </div>
+
+        <div id="version">
+            <!--v2.1.0-->
+        </div>
+
     </div>
 
-    <!-- Run Screen -->
-    <div id="run">
-        <div id="phaseLabel">WORK</div>
-        <div id="timeDisplay">40</div>
-        <div id="roundLabel">ROUND 1 / 10</div>
-        <div id="controls">
-            <button id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
-            <button onclick="resetSession()">⟳ Reset</button>
+    <!-- =========================
+         TIMER SCREEN
+    ========================== -->
+    <div id="timerScreen">
+
+        <div id="phaseLabel">
+            WORK
         </div>
+
+        <div id="timeDisplay">
+            40
+        </div>
+
+        <div id="roundLabel">
+            ROUND 1 / 10
+        </div>
+
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
+
+        <div id="timerControls">
+
+            <button id="pauseBtn" onclick="togglePause()">
+                ⏸ Pause
+            </button>
+
+            <button onclick="resetSession()">
+                ⟳ Reset
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- =========================
+         SETTINGS PAGE
+    ========================== -->
+    <div id="settingsScreen">
+
+        <div class="settings-header">
+
+            <button class="back-btn" onclick="closeSettings()">
+                ←
+            </button>
+
+            <h2>Settings</h2>
+
+        </div>
+
+        <!-- TIMER SETTINGS -->
+        <div class="settings-group">
+
+            <div class="group-title">
+                TIMER SETTINGS
+            </div>
+
+            <div class="setting-row">
+
+                <span>Preparation Time</span>
+
+                <div class="small-stepper">
+
+                    <button onclick="adjustPrep(-1)">
+                        −
+                    </button>
+
+                    <span id="prepValue">
+                        5 sec
+                    </span>
+
+                    <button onclick="adjustPrep(1)">
+                        +
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- BEHAVIOR -->
+        <div class="settings-group">
+
+            <div class="group-title">
+                BEHAVIOR
+            </div>
+
+            <label class="toggle-row">
+
+                <span>Skip Last Rest</span>
+
+                <input
+                    type="checkbox"
+                    id="skipLastRest"
+                >
+
+            </label>
+
+            <label class="toggle-row">
+
+                <span>Tick Sound</span>
+
+                <input
+                    type="checkbox"
+                    id="tickSound"
+                    checked
+                >
+
+            </label>
+
+            <label class="toggle-row">
+
+                <span>Vibration</span>
+
+                <input
+                    type="checkbox"
+                    id="vibrationEnabled"
+                    checked
+                >
+
+            </label>
+
+        </div>
+
+        <!-- ABOUT -->
+        <div class="settings-group">
+
+            <div class="group-title">
+                ABOUT
+            </div>
+
+            <div class="about-text">
+                Version 2.1.0
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- =========================
+         ADD PRESET MODAL
+    ========================== -->
+    <div id="presetModal">
+
+        <div class="modal-card">
+
+            <div class="modal-header">
+
+                <h3>Add New Preset</h3>
+
+                <button
+                    class="close-btn"
+                    onclick="closePresetModal()">
+                    ✕
+                </button>
+
+            </div>
+
+            <div class="modal-field">
+
+                <label>Preset Name</label>
+
+                <input
+                    id="presetName"
+                    type="text"
+                    maxlength="30"
+                    placeholder="Morning HIIT"
+                >
+
+            </div>
+
+            <div class="modal-field">
+
+                <label>Work</label>
+
+                <input
+                    id="presetWork"
+                    type="number"
+                    min="1"
+                    value="40"
+                >
+
+            </div>
+
+            <div class="modal-field">
+
+                <label>Rest</label>
+
+                <input
+                    id="presetRest"
+                    type="number"
+                    min="1"
+                    value="20"
+                >
+
+            </div>
+
+            <div class="modal-field">
+
+                <label>Prep</label>
+
+                <input
+                    id="presetPrep"
+                    type="number"
+                    min="0"
+                    value="5"
+                >
+
+            </div>
+
+            <div class="modal-field">
+
+                <label>Rounds</label>
+
+                <input
+                    id="presetRounds"
+                    type="number"
+                    min="1"
+                    value="10"
+                >
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button onclick="closePresetModal()">
+                    Cancel
+                </button>
+
+                <button onclick="savePreset()">
+                    Save
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- =========================
+         COMPLETE SCREEN
+    ========================== -->
+    <div id="completeScreen">
+
+        <div class="complete-icon">
+            🎉
+        </div>
+
+        <h2>
+            Workout Complete
+        </h2>
+
+        <div id="completeSummary">
+        </div>
+
+        <div class="complete-actions">
+
+            <button onclick="repeatWorkout()">
+                Repeat
+            </button>
+
+            <button onclick="resetSession()">
+                Back
+            </button>
+
+        </div>
+
     </div>
 
     <script src="script.js"></script>
+
 </body>
 </html>

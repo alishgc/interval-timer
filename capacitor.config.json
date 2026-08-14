@@ -1,6 +1,6 @@
 {
-  "appId": "com.alishgc.intervaltimer",
-  "appName": "Interval Timer",
+  "appId": "com.alishgc.workout.timer.app",
+  "appName": "Workout Timer",
   "webDir": "src",
   "bundledWebRuntime": false,
   "server": {

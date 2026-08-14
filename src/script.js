@@ -1,234 +1,1309 @@
-// script.js
-let config = { work: 40, rest: 20, rounds: 10 };
-let state = { phase: 'work', secondsLeft: 40, round: 1, running: false, paused: false };
-let tickInterval = null;
+/* ==========================================
+   INTERVAL TIMER v2.1.0
+   PART 1
+========================================== */
+
+const STORAGE_KEY = "intervalTimerV21";
+
+/* ==========================================
+   CONFIG
+========================================== */
+
+const defaults = {
+    work: 40,
+    rest: 20,
+    rounds: 10,
+    prep: 5,
+
+    tickSound: true,
+    skipLastRest: false,
+    vibration: true,
+
+    presets: []
+};
+
+let config = {};
 let wakeLock = null;
 let audioCtx = null;
 
-// ---------- Configuration ----------
-function adjust(key, delta) {
-    const min = key === 'rounds' ? 1 : 1;
-    config[key] = Math.max(min, config[key] + delta);
-    document.getElementById(key + 'Val').value = config[key];
-    saveConfig();
-}
+/* ==========================================
+   TIMER STATE
+========================================== */
 
-function commit(key, inputEl) {
-    let v = parseInt(inputEl.value, 10);
-    if (isNaN(v) || v < 1) v = 1;
-    config[key] = v;
-    inputEl.value = v;
-    saveConfig();
+let timerInterval = null;
+
+let state = {
+    running: false,
+    paused: false,
+
+    phase: "prep",
+
+    round: 1,
+
+    secondsLeft: 0,
+
+    lastWorkoutConfig: null
+};
+
+/* ==========================================
+   STORAGE
+========================================== */
+
+function loadConfig() {
+
+    try {
+
+        const saved =
+            JSON.parse(
+                localStorage.getItem(STORAGE_KEY)
+            );
+
+        config = {
+            ...defaults,
+            ...saved
+        };
+
+    } catch {
+
+        config = { ...defaults };
+
+    }
+
 }
 
 function saveConfig() {
-    try {
-        localStorage.setItem('intervalTimerConfig', JSON.stringify(config));
-    } catch (e) {}
+
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(config)
+    );
+
 }
 
-function loadConfig() {
-    try {
-        const saved = localStorage.getItem('intervalTimerConfig');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed.work) config.work = parsed.work;
-            if (parsed.rest) config.rest = parsed.rest;
-            if (parsed.rounds) config.rounds = parsed.rounds;
-        }
-    } catch (e) {}
-    document.getElementById('workVal').value = config.work;
-    document.getElementById('restVal').value = config.rest;
-    document.getElementById('roundsVal').value = config.rounds;
-}
-loadConfig();
+/* ==========================================
+   ELEMENT HELPERS
+========================================== */
 
-// ---------- Audio ----------
+const $ = id =>
+    document.getElementById(id);
+
+/* ==========================================
+   AUDIO
+========================================== */
+
 function ensureAudio() {
-    if (!audioCtx) {
-        try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        } catch (e) {
-            console.warn('Web Audio API not supported');
-        }
+
+    if (audioCtx) return;
+
+    try {
+
+        audioCtx =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    } catch (err) {
+
+        console.warn(
+            "Audio unavailable"
+        );
+
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
+
 }
 
-function beep(freq, durationMs) {
+function playTone(
+    frequency,
+    duration = 120,
+    volume = 0.2
+) {
+
     if (!audioCtx) return;
-    try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + durationMs / 1000);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + durationMs / 1000);
-    } catch (e) {
-        console.warn('Beep failed:', e);
-    }
+
+    const osc =
+        audioCtx.createOscillator();
+
+    const gain =
+        audioCtx.createGain();
+
+    osc.frequency.value =
+        frequency;
+
+    osc.type = "sine";
+
+    gain.gain.value = volume;
+
+    osc.connect(gain);
+    gain.connect(
+        audioCtx.destination
+    );
+
+    osc.start();
+
+    setTimeout(() => {
+
+        osc.stop();
+
+    }, duration);
+
 }
+
+function tickSound() {
+
+    if (!config.tickSound) return;
+
+    playTone(500, 40, 0.03);
+
+}
+
+function countdownBeep() {
+
+    playTone(950, 140, 0.18);
+
+}
+
+function transitionSound() {
+
+    playTone(900, 120, 0.15);
+
+    setTimeout(() => {
+
+        playTone(1200, 120, 0.15);
+
+    }, 140);
+
+}
+
+function completeSound() {
+
+    playTone(850, 150);
+
+    setTimeout(() => {
+
+        playTone(1000, 150);
+
+    }, 180);
+
+    setTimeout(() => {
+
+        playTone(1300, 220);
+
+    }, 360);
+
+}
+
+/* ==========================================
+   VIBRATION
+========================================== */
 
 function vibrate(ms) {
-    try {
-        if (navigator.vibrate) navigator.vibrate(ms);
-    } catch (e) {}
+
+    if (!config.vibration)
+        return;
+
+    if (
+        navigator.vibrate
+    ) {
+
+        navigator.vibrate(ms);
+
+    }
+
 }
 
-// ---------- Wake Lock ----------
+/* ==========================================
+   WAKE LOCK
+========================================== */
+
 async function requestWakeLock() {
+
     try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakeLock.addEventListener('release', () => {
-                console.log('Wake Lock released');
-            });
+
+        if (
+            "wakeLock" in navigator
+        ) {
+
+            wakeLock =
+                await navigator
+                    .wakeLock
+                    .request("screen");
+
         }
-    } catch (e) {
-        console.warn('Wake Lock not available:', e);
+
+    } catch (err) {
+
+        console.warn(
+            "Wake Lock unavailable"
+        );
+
     }
+
 }
 
-function releaseWakeLock() {
-    if (wakeLock) {
-        try {
-            wakeLock.release();
-        } catch (e) {}
-        wakeLock = null;
-    }
+async function releaseWakeLock() {
+
+    if (!wakeLock)
+        return;
+
+    try {
+
+        await wakeLock.release();
+
+    } catch {}
+
+    wakeLock = null;
+
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && state.running && !state.paused) {
-        requestWakeLock();
-    }
-});
+document.addEventListener(
+    "visibilitychange",
+    () => {
 
-// ---------- UI ----------
-function setPhaseVisual(phase) {
-    const run = document.getElementById('run');
-    run.classList.remove('phase-work', 'phase-rest', 'phase-done');
-    if (phase === 'work') run.classList.add('phase-work');
-    else if (phase === 'rest') run.classList.add('phase-rest');
-    else run.classList.add('phase-done');
+        if (
+            document.visibilityState ===
+                "visible" &&
+            state.running &&
+            !state.paused
+        ) {
+
+            requestWakeLock();
+
+        }
+
+    }
+);
+
+/* ==========================================
+   SETTINGS
+========================================== */
+
+function openSettings() {
+
+    $("setupScreen").style.display =
+        "none";
+
+    $("settingsScreen").style.display =
+        "block";
+
 }
 
-function render() {
-    const timeEl = document.getElementById('timeDisplay');
-    const phaseEl = document.getElementById('phaseLabel');
-    const roundEl = document.getElementById('roundLabel');
+function closeSettings() {
 
-    if (state.phase === 'done') {
-        phaseEl.textContent = '🎯 COMPLETE';
-        timeEl.textContent = '✓';
-        timeEl.classList.remove('pulse');
-        roundEl.textContent = `${config.rounds} ROUNDS FINISHED`;
-        document.getElementById('pauseBtn').style.display = 'none';
+    saveSettings();
+
+    $("settingsScreen").style.display =
+        "none";
+
+    $("setupScreen").style.display =
+        "flex";
+
+}
+
+function adjustPrep(delta) {
+
+    config.prep =
+        Math.max(
+            0,
+            config.prep + delta
+        );
+
+    updateSettingsUI();
+
+    saveConfig();
+
+}
+
+function updateSettingsUI() {
+
+    $("prepValue").textContent =
+        `${config.prep} sec`;
+
+    $("tickSound").checked =
+        config.tickSound;
+
+    $("skipLastRest").checked =
+        config.skipLastRest;
+
+    $("vibrationEnabled").checked =
+        config.vibration;
+
+}
+
+function saveSettings() {
+
+    config.tickSound =
+        $("tickSound").checked;
+
+    config.skipLastRest =
+        $("skipLastRest").checked;
+
+    config.vibration =
+        $("vibrationEnabled").checked;
+
+    saveConfig();
+
+}
+
+/* ==========================================
+   INPUT HELPERS
+========================================== */
+
+function clamp(
+    value,
+    min,
+    max
+) {
+
+    return Math.min(
+        max,
+        Math.max(
+            min,
+            value
+        )
+    );
+
+}
+
+function getNumber(id) {
+
+    return parseInt(
+        $(id).value,
+        10
+    ) || 0;
+
+}
+
+function adjustValue(
+    type,
+    amount
+) {
+
+    let input;
+
+    if (type === "work")
+        input = $("workInput");
+
+    if (type === "rest")
+        input = $("restInput");
+
+    if (type === "rounds")
+        input = $("roundsInput");
+
+    let value =
+        parseInt(input.value, 10) || 0;
+
+    value += amount;
+
+    if (type === "rounds") {
+
+        value =
+            clamp(
+                value,
+                1,
+                999
+            );
+
     } else {
-        phaseEl.textContent = state.phase === 'work' ? 'WORK' : 'REST';
-        timeEl.textContent = state.secondsLeft;
-        if (state.secondsLeft <= 5) {
-            timeEl.classList.add('pulse');
-        } else {
-            timeEl.classList.remove('pulse');
-        }
-        roundEl.textContent = `ROUND ${state.round} / ${config.rounds}`;
-        document.getElementById('pauseBtn').style.display = '';
-    }
-    setPhaseVisual(state.phase);
-}
-//💪☕
-// ---------- Timer Control ----------
-function startSession() {
-    ensureAudio();
-    commit('work', document.getElementById('workVal'));
-    commit('rest', document.getElementById('restVal'));
-    commit('rounds', document.getElementById('roundsVal'));
 
-    state = {
-        phase: 'work',
-        secondsLeft: config.work,
-        round: 1,
-        running: true,
-        paused: false
+        value =
+            clamp(
+                value,
+                1,
+                3600
+            );
+
+    }
+
+    input.value = value;
+
+    updateTotalTime();
+
+}
+
+/* ==========================================
+   PRESETS
+========================================== */
+
+function openPresetModal() {
+
+    $("presetModal").style.display =
+        "flex";
+
+    $("presetName").value = "";
+
+    $("presetWork").value =
+        $("workInput").value;
+
+    $("presetRest").value =
+        $("restInput").value;
+
+    $("presetPrep").value =
+        config.prep;
+
+    $("presetRounds").value =
+        $("roundsInput").value;
+
+}
+
+function closePresetModal() {
+
+    $("presetModal").style.display =
+        "none";
+
+}
+
+function savePreset() {
+
+    const name =
+        $("presetName")
+            .value
+            .trim();
+
+    if (!name) {
+
+        alert(
+            "Enter a preset name"
+        );
+
+        return;
+
+    }
+
+    const preset = {
+
+        id:
+            Date.now()
+            .toString(),
+
+        name,
+
+        work:
+            getNumber(
+                "presetWork"
+            ),
+
+        rest:
+            getNumber(
+                "presetRest"
+            ),
+
+        prep:
+            getNumber(
+                "presetPrep"
+            ),
+
+        rounds:
+            getNumber(
+                "presetRounds"
+            )
+
     };
 
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('run').style.display = 'flex';
-    document.getElementById('pauseBtn').textContent = '⏸ Pause';
-    document.getElementById('pauseBtn').style.display = '';
-    document.querySelector('#controls button:last-child').textContent = '⟳ Reset';
+    config.presets.push(
+        preset
+    );
+
+    saveConfig();
+
+    renderPresets();
+
+    closePresetModal();
+
+}
+
+function deletePreset(id) {
+
+    const preset =
+        config.presets.find(
+            p => p.id === id
+        );
+
+    if (!preset)
+        return;
+
+    const confirmed =
+        confirm(
+            `Delete "${preset.name}"?`
+        );
+
+    if (!confirmed)
+        return;
+
+    config.presets =
+        config.presets.filter(
+            p => p.id !== id
+        );
+
+    saveConfig();
+
+    renderPresets();
+
+}
+
+function loadPreset(id) {
+
+    const preset =
+        config.presets.find(
+            p => p.id === id
+        );
+
+    if (!preset)
+        return;
+
+    $("workInput").value =
+        preset.work;
+
+    $("restInput").value =
+        preset.rest;
+
+    $("roundsInput").value =
+        preset.rounds;
+
+    config.prep =
+        preset.prep;
+
+    updateSettingsUI();
+
+    updateTotalTime();
+
+    saveConfig();
+
+}
+
+function renderPresets() {
+
+    const container =
+        $("presetList");
+
+    container.innerHTML = "";
+
+    config.presets.forEach(
+        preset => {
+
+            const chip =
+                document.createElement(
+                    "div"
+                );
+
+            chip.className =
+                "preset-chip";
+
+            chip.innerHTML = `
+                <button
+                    class="preset-load"
+                    onclick="loadPreset('${preset.id}')">
+                    ${preset.name}
+                </button>
+
+                <button
+                    class="preset-delete"
+                    onclick="deletePreset('${preset.id}')">
+                    ✕
+                </button>
+            `;
+
+            container.appendChild(
+                chip
+            );
+
+        }
+    );
+
+}
+
+/* ==========================================
+   TOTAL WORKOUT TIME
+========================================== */
+
+function updateTotalTime() {
+
+    const work =
+        getNumber(
+            "workInput"
+        );
+
+    const rest =
+        getNumber(
+            "restInput"
+        );
+
+    const rounds =
+        getNumber(
+            "roundsInput"
+        );
+
+    let total =
+        config.prep;
+
+    total +=
+        work * rounds;
+
+    if (
+        config.skipLastRest
+    ) {
+
+        total +=
+            rest *
+            Math.max(
+                0,
+                rounds - 1
+            );
+
+    } else {
+
+        total +=
+            rest * rounds;
+
+    }
+
+    const mins =
+        Math.floor(
+            total / 60
+        );
+
+    const secs =
+        total % 60;
+
+    $("totalTimeText")
+        .textContent =
+        `${mins}m ${secs}s`;
+
+}
+
+/* ==========================================
+   LOAD UI
+========================================== */
+
+function loadUIFromConfig() {
+
+    $("workInput").value =
+        config.work;
+
+    $("restInput").value =
+        config.rest;
+
+    $("roundsInput").value =
+        config.rounds;
+
+    updateSettingsUI();
+
+    renderPresets();
+
+    updateTotalTime();
+
+}
+
+/* ==========================================
+   SAVE CURRENT INPUTS
+========================================== */
+
+function saveCurrentInputs() {
+
+    config.work =
+        clamp(
+            getNumber(
+                "workInput"
+            ),
+            1,
+            3600
+        );
+
+    config.rest =
+        clamp(
+            getNumber(
+                "restInput"
+            ),
+            1,
+            3600
+        );
+
+    config.rounds =
+        clamp(
+            getNumber(
+                "roundsInput"
+            ),
+            1,
+            999
+        );
+
+    saveConfig();
+
+}
+
+/* ==========================================
+   EVENTS
+========================================== */
+
+function registerEvents() {
+
+    $("settingsBtn")
+        .addEventListener(
+            "click",
+            openSettings
+        );
+
+    $("workInput")
+        .addEventListener(
+            "input",
+            updateTotalTime
+        );
+
+    $("restInput")
+        .addEventListener(
+            "input",
+            updateTotalTime
+        );
+
+    $("roundsInput")
+        .addEventListener(
+            "input",
+            updateTotalTime
+        );
+
+    $("tickSound")
+        .addEventListener(
+            "change",
+            saveSettings
+        );
+
+    $("skipLastRest")
+        .addEventListener(
+            "change",
+            () => {
+
+                saveSettings();
+
+                updateTotalTime();
+
+            }
+        );
+
+    $("vibrationEnabled")
+        .addEventListener(
+            "change",
+            saveSettings
+        );
+
+}
+
+/* ==========================================
+   BOOT
+========================================== */
+
+loadConfig();
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        loadUIFromConfig();
+
+        registerEvents();
+
+    }
+);
+
+/* ==========================================
+   TIMER ENGINE
+   PART 3
+========================================== */
+
+function startSession() {
+
+    ensureAudio();
+
+    saveCurrentInputs();
+
+    state.lastWorkoutConfig = {
+        work: config.work,
+        rest: config.rest,
+        rounds: config.rounds,
+        prep: config.prep
+    };
+
+    state.running = true;
+    state.paused = false;
+
+    state.round = 1;
+
+    if (config.prep > 0) {
+
+        state.phase = "prep";
+        state.secondsLeft = config.prep;
+
+    } else {
+
+        state.phase = "work";
+        state.secondsLeft = config.work;
+
+    }
+
+    $("setupScreen").style.display =
+        "none";
+
+    $("completeScreen").style.display =
+        "none";
+
+    $("timerScreen").style.display =
+        "flex";
+
+    $("pauseBtn").textContent =
+        "⏸ Pause";
+
+    updatePhaseVisual();
+
+    updateProgress();
+
+    renderTimer();
 
     requestWakeLock();
-    render();
-    tickInterval = setInterval(tick, 1000);
+
+    clearInterval(
+        timerInterval
+    );
+
+    timerInterval =
+        setInterval(
+            tick,
+            1000
+        );
+
 }
 
 function tick() {
-    if (!state.running || state.paused) return;
 
-    if (state.secondsLeft <= 4 && state.secondsLeft > 1) {
-        beep(880, 150);
+    if (
+        !state.running ||
+        state.paused
+    ) {
+        return;
+    }
+
+    tickSound();
+
+    if (
+        state.secondsLeft <= 3 &&
+        state.secondsLeft > 0
+    ) {
+
+        countdownBeep();
+
     }
 
     state.secondsLeft--;
 
-    if (state.secondsLeft <= 0) {
-        vibrate(300);
-        beep(1200, 400);
+    if (
+        state.secondsLeft < 0
+    ) {
 
-        if (state.phase === 'work') {
-            state.phase = 'rest';
-            state.secondsLeft = config.rest;
-        } else {
-            if (state.round >= config.rounds) {
-                finishSession();
-                return;
-            }
-            state.round++;
-            state.phase = 'work';
-            state.secondsLeft = config.work;
-        }
+        nextPhase();
+
+        return;
+
     }
-    render();
+
+    renderTimer();
+
 }
 
-function finishSession() {
-    state.running = false;
-    state.phase = 'done';
-    clearInterval(tickInterval);
-    releaseWakeLock();
-    document.querySelector('#controls button:last-child').textContent = '🔄 Start Over';
-    beep(880, 200);
-    setTimeout(() => beep(1100, 200), 300);
-    render();
+function nextPhase() {
+
+    transitionSound();
+
+    vibrate(200);
+
+    /* PREP -> WORK */
+
+    if (
+        state.phase === "prep"
+    ) {
+
+        state.phase = "work";
+
+        state.secondsLeft =
+            config.work;
+
+        updatePhaseVisual();
+
+        renderTimer();
+
+        return;
+
+    }
+
+    /* WORK -> REST */
+
+    if (
+        state.phase === "work"
+    ) {
+
+        const isLastRound =
+            state.round ===
+            config.rounds;
+
+        if (
+            isLastRound &&
+            config.skipLastRest
+        ) {
+
+            finishWorkout();
+
+            return;
+
+        }
+
+        state.phase = "rest";
+
+        state.secondsLeft =
+            config.rest;
+
+        updatePhaseVisual();
+
+        renderTimer();
+
+        return;
+
+    }
+
+    /* REST -> NEXT WORK */
+
+    if (
+        state.phase === "rest"
+    ) {
+
+        if (
+            state.round >=
+            config.rounds
+        ) {
+
+            finishWorkout();
+
+            return;
+
+        }
+
+        state.round++;
+
+        state.phase = "work";
+
+        state.secondsLeft =
+            config.work;
+
+        updateProgress();
+
+        updatePhaseVisual();
+
+        renderTimer();
+
+    }
+
 }
+
+function renderTimer() {
+
+    $("timeDisplay")
+        .textContent =
+        state.secondsLeft;
+
+    let phaseText =
+        "WORK";
+
+    if (
+        state.phase === "prep"
+    ) {
+
+        phaseText =
+            "PREP";
+
+    }
+
+    if (
+        state.phase === "rest"
+    ) {
+
+        phaseText =
+            "REST";
+
+    }
+
+    $("phaseLabel")
+        .textContent =
+        phaseText;
+
+    $("roundLabel")
+        .textContent =
+        `ROUND ${state.round} / ${config.rounds}`;
+
+}
+
+/* ==========================================
+   PHASE COLORS
+========================================== */
+
+function updatePhaseVisual() {
+
+    document.body.classList.remove(
+        "phase-prep",
+        "phase-work",
+        "phase-rest",
+        "phase-complete"
+    );
+
+    if (
+        state.phase === "prep"
+    ) {
+
+        document.body.classList.add(
+            "phase-prep"
+        );
+
+    }
+
+    if (
+        state.phase === "work"
+    ) {
+
+        document.body.classList.add(
+            "phase-work"
+        );
+
+    }
+
+    if (
+        state.phase === "rest"
+    ) {
+
+        document.body.classList.add(
+            "phase-rest"
+        );
+
+    }
+
+}
+
+/* ==========================================
+   PROGRESS BAR
+========================================== */
+
+function updateProgress() {
+
+    const percent =
+        (
+            (
+                state.round - 1
+            ) /
+            config.rounds
+        ) * 100;
+
+    $("progressBar").style.width =
+        `${percent}%`;
+
+}
+
+/* ==========================================
+   COMPLETE
+========================================== */
+
+function finishWorkout() {
+
+    clearInterval(
+        timerInterval
+    );
+
+    timerInterval = null;
+
+    state.running = false;
+
+    releaseWakeLock();
+
+    completeSound();
+
+    vibrate(500);
+
+    $("timerScreen").style.display =
+        "none";
+
+    $("completeScreen").style.display =
+        "flex";
+
+    document.body.classList.remove(
+        "phase-prep",
+        "phase-work",
+        "phase-rest"
+    );
+
+    document.body.classList.add(
+        "phase-complete"
+    );
+
+    const totalWork =
+        config.work *
+        config.rounds;
+
+    const mins =
+        Math.floor(
+            totalWork / 60
+        );
+
+    const secs =
+        totalWork % 60;
+
+    $("completeSummary")
+        .innerHTML = `
+        <p>
+            Rounds:
+            <strong>${config.rounds}</strong>
+        </p>
+
+        <p>
+            Work Time:
+            <strong>${mins}m ${secs}s</strong>
+        </p>
+    `;
+
+    $("progressBar").style.width =
+        "100%";
+
+}
+
+/* ==========================================
+   PAUSE
+========================================== */
 
 function togglePause() {
-    state.paused = !state.paused;
-    const btn = document.getElementById('pauseBtn');
-    btn.textContent = state.paused ? '▶ Resume' : '⏸ Pause';
-    btn.classList.toggle('active', state.paused);
-    if (state.paused) {
+
+    if (
+        !state.running
+    ) return;
+
+    state.paused =
+        !state.paused;
+
+    $("pauseBtn")
+        .textContent =
+        state.paused
+            ? "▶ Resume"
+            : "⏸ Pause";
+
+    if (
+        state.paused
+    ) {
+
         releaseWakeLock();
+
     } else {
+
         requestWakeLock();
+
     }
+
 }
 
+/* ==========================================
+   RESET
+========================================== */
+
 function resetSession() {
-    clearInterval(tickInterval);
-    releaseWakeLock();
+
+    clearInterval(
+        timerInterval
+    );
+
+    timerInterval = null;
+
     state.running = false;
     state.paused = false;
-    document.getElementById('run').style.display = 'none';
-    document.getElementById('setup').style.display = 'flex';
-    document.getElementById('timeDisplay').classList.remove('pulse');
+
+    releaseWakeLock();
+
+    document.body.classList.remove(
+        "phase-prep",
+        "phase-work",
+        "phase-rest",
+        "phase-complete"
+    );
+
+    $("timerScreen").style.display =
+        "none";
+
+    $("completeScreen").style.display =
+        "none";
+
+    $("settingsScreen").style.display =
+        "none";
+
+    $("presetModal").style.display =
+        "none";
+
+    $("setupScreen").style.display =
+        "flex";
+
+    updateTotalTime();
+
 }
+
+/* ==========================================
+   REPEAT WORKOUT
+========================================== */
+
+function repeatWorkout() {
+
+    if (
+        !state.lastWorkoutConfig
+    ) {
+
+        resetSession();
+
+        return;
+
+    }
+
+    config.work =
+        state.lastWorkoutConfig.work;
+
+    config.rest =
+        state.lastWorkoutConfig.rest;
+
+    config.rounds =
+        state.lastWorkoutConfig.rounds;
+
+    config.prep =
+        state.lastWorkoutConfig.prep;
+
+    saveConfig();
+
+    startSession();
+
+}
+
+/* ==========================================
+   EXIT PROTECTION
+========================================== */
+
+window.addEventListener(
+    "beforeunload",
+    event => {
+
+        if (
+            !state.running
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+
+        event.returnValue = "";
+
+    }
+);
+
+/* ==========================================
+   FINAL INIT
+========================================== */
+
+updateTotalTime();
+
+renderPresets();
+
+updateSettingsUI();
